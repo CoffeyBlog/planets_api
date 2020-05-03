@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, Integer, String, Float
 from flask_marshmallow import Marshmallow
+from marshmallow-sqlalchemy	import
 import os
 
 app = Flask(__name__)
@@ -103,6 +104,23 @@ def planets():
     planets_list = Planet.query.all()
     result = planets_schema.dump(planets_list)
     return jsonify(result.data)
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    email = request.form['email']                                                   # what is the email?
+    test = User.query.filter_by(email=email).first()                                # does this email already exist?
+    if test:
+        return jsonify(message='That email already exists'), 409                    # if yes send a 409 error
+    else:
+        first_name = request.form['first_name']                                     # if not start the process of creating a new user
+        last_name = request.form['last_name']
+        password = request.form['password']
+        # instantiate new user
+        user = User(first_name=first_name, last_name=last_name, password=password)  # now instantiate that new user
+        db.session.add(user)                                                        # add new user to database
+        db.session.commit(user)
+        return jsonify(message='user has been created successfully and added to db'), 201
 
 
 # database models
