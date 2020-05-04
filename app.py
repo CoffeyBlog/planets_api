@@ -2,7 +2,6 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, Integer, String, Float
 from flask_marshmallow import Marshmallow
-from marshmallow-sqlalchemy	import
 import os
 
 app = Flask(__name__)
@@ -164,3 +163,5 @@ planets_schema = PlanetSchema(many=True)
 
 if __name__ == '__main__':
     app.run()
+
+# having an issue with registering users
