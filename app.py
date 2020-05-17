@@ -90,6 +90,7 @@ def parameters():
         return jsonify(message="Welcome " + name + " you are old enough")
 
 
+# check age of the user
 @app.route('/url_variables/<string:name>/<int:age>')
 def url_variables(name: str, age: int):
     if age < 18:
@@ -98,6 +99,8 @@ def url_variables(name: str, age: int):
         return jsonify(message="Welcome " + name + " you are old enough")
 
 
+# Retrieve the list of planets from the database
+# you can't return json data here -
 @app.route('/planets', methods=['GET'])
 def planets():
     planets_list = Planet.query.all()
@@ -105,6 +108,7 @@ def planets():
     return jsonify(result.data)
 
 
+# add or post new users to the database - but first ensure that users don't already exist
 @app.route('/register', methods=['POST'])
 def register():
     email = request.form['email']                                                   # what is the email?
