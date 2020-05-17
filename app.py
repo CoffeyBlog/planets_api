@@ -104,8 +104,8 @@ def url_variables(name: str, age: int):
 @app.route('/planets', methods=['GET'])
 def planets():
     planets_list = Planet.query.all()
-    result = planets_schema.dump(planets_list)
-    return jsonify(result.data)
+    result = planets_schema.dump(planets_list) # the result equals the planets list in the planets schema
+    return jsonify(result) # return result (in the previous line) but return it in JSON format using Marshmallow
 
 
 # add or post new users to the database - but first ensure that users don't already exist
@@ -147,6 +147,7 @@ class Planet(db.Model):
     distance = Column(Float)
 
 
+# The following code is Marshmallow (ma.)
 class UserSchema(ma.Schema):
     class Meta:
         fields = ('id', 'first_name', 'last_name', 'email', 'password')
@@ -157,12 +158,13 @@ class PlanetSchema(ma.Schema):
         fields = ('planet_id', 'planet_name', 'planet_type', 'home_star', 'mass', 'radius', 'distance')
 
 
+# instantiation of UserSchema (or structure of the database table called User)
 user_schema = UserSchema()
-users_schema = UserSchema(many=True)
+users_schema = UserSchema(many=True) # allows us to get a collection of records back from the DB
 
-
+# instantiation of PlanetSchema (or structure of the database table called Planet)
 plant_schema = PlanetSchema()
-planets_schema = PlanetSchema(many=True)
+planets_schema = PlanetSchema(many=True) # allows us to get a collection of records back from the DB
 
 
 if __name__ == '__main__':
