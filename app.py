@@ -2,15 +2,20 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, Integer, String, Float
 from flask_marshmallow import Marshmallow
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 import os
+
 
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'planets.db')
+app.config['JWT_SECRET_KEY'] = 'super-secret'   # change this later
+
 
 # establish an instance of imported libraries
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
+jwt = JWTManager(app)
 
 
 @app.cli.command('db_create')
@@ -104,26 +109,43 @@ def url_variables(name: str, age: int):
 @app.route('/planets', methods=['GET'])
 def planets():
     planets_list = Planet.query.all()
-    result = planets_schema.dump(planets_list) # the result equals the planets list in the planets schema
-    return jsonify(result) # return result (in the previous line) but return it in JSON format using Marshmallow
+    result = planets_schema.dump(planets_list)  # the result equals the planets list in the planets schema
+    return jsonify(result)  # return result (in the previous line) but return it in JSON format using Marshmallow
 
 
 # add or post new users to the database - but first ensure that users don't already exist
 @app.route('/register', methods=['POST'])
 def register():
-    email = request.form['email']                                                   # what is the email?
-    test = User.query.filter_by(email=email).first()                                # does this email already exist?
+    email = request.form['email']  # what is the email?
+    test = User.query.filter_by(email=email).first()  # does this email already exist?
     if test:
-        return jsonify(message='That email already exists'), 409                    # if yes send a 409 error
+        return jsonify(message='That email already exists'), 409  # if yes send a 409 error
     else:
-        first_name = request.form['first_name']                                     # if not start the process of creating a new user
+        first_name = request.form['first_name']  # if not start the process of creating a new user
         last_name = request.form['last_name']
         password = request.form['password']
         # instantiate new user
         user = User(first_name=first_name, last_name=last_name, password=password)  # now instantiate that new user
-        db.session.add(user)                                                        # add new user to database
-        db.session.commit(user)
+        db.session.add(user)  # add new user to database
+        db.session.commit()
         return jsonify(message='user has been created successfully and added to db'), 201
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    if request.is_json:
+        email = request.json['email']
+        password = request.json['password']
+    else:
+        email = request.form['email']
+        password = request.form['password']
+
+    test = User.query.filter_by(email=email, password=password).first()
+    if test:
+        access_token = create_access_token(identity=email)  # how are we identifying the user - we are using the email
+        return jsonify(message="Login successful", access_token=access_token)
+    else:
+        return jsonify(message="Bad email"), 401
 
 
 # database models
@@ -160,12 +182,11 @@ class PlanetSchema(ma.Schema):
 
 # instantiation of UserSchema (or structure of the database table called User)
 user_schema = UserSchema()
-users_schema = UserSchema(many=True) # allows us to get a collection of records back from the DB
+users_schema = UserSchema(many=True)  # allows us to get a collection of records back from the DB
 
 # instantiation of PlanetSchema (or structure of the database table called Planet)
-plant_schema = PlanetSchema()
-planets_schema = PlanetSchema(many=True) # allows us to get a collection of records back from the DB
-
+planet_schema = PlanetSchema()
+planets_schema = PlanetSchema(many=True)  # allows us to get a collection of records back from the DB
 
 if __name__ == '__main__':
     app.run()
