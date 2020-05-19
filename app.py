@@ -11,10 +11,9 @@ app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'planets.db')
 app.config['JWT_SECRET_KEY'] = 'super-secret'   # change this later
-app.config['MAIL_SERVER'] = 'smpt.mailtrap.io'
+app.config['MAIL_SERVER'] = 'smtp.mailtrap.io'
 app.config['MAIL_USERNAME'] = os.environ['MAIL_USERNAME']
 app.config['MAIL_PASSWORD'] = os.environ['MAIL_PASSWORD']
-
 
 
 # establish an instance of imported libraries
@@ -22,6 +21,7 @@ db = SQLAlchemy(app)
 ma = Marshmallow(app)
 jwt = JWTManager(app)
 mail = Mail(app)
+
 
 @app.cli.command('db_create')
 def db_create():
@@ -163,7 +163,17 @@ def retrieve_password(email: str):
         mail.send(msg)
         return jsonify(message="Password sent to " + email)
     else:
-        return jsonify(message="That email doesn't exist")
+        return jsonify(message="That email doesn't exist"), 401
+
+
+@app.route('/planet_details/<int:planet_id>', methods=['GET'])
+def planet_details(planet_id: int):
+    planet = Planet.query.filter_by(planet_id=planet_id).first()
+    if planet:
+        result = planet_schema.dump(planet)
+        return jsonify(result.data)
+    else:
+        return jsonify(message="That planet does not exist"), 404
 
 
 # database models
